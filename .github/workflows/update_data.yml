@@ -27,11 +27,14 @@ jobs:
     - name: Run download script
       run: python download_data.py
 
+    - name: Run Euribor update 
+      run: Python Download_Euribor.py
+
     - name: Commit and Push changes
       run: |
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
         # Aggiungiamo tutta la cartella data, incluse le sottocartelle come ETF/
-        git add data/
+        git add data/ETF/*.csv data/Tassi/*.csv
         git commit -m "Aggiornamento dati storici ETF $(date)" || echo "Nessuna modifica da caricare"
         git push
