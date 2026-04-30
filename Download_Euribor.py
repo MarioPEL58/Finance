@@ -19,26 +19,32 @@ maturities = {
 }
 
 def fetch_ecb_series(key):
-    # Updated URL for the new ECB Data Gateway
-    url = f"https://data-api.ecb.europa.eu/service/data/FM/{key}?format=csvdata"
+    # The new API requires the dataflow (FM) and the key separated correctly
+    # Structure: /data/seriesKey?parameters
+    url = f"https://data-api.ecb.europa.eu/service/data/ECB,FM,1.0/{key}?format=csvdata&startPeriod=2010-01-01"
+    
     try:
-        # Added a User-Agent so the ECB knows it's a legitimate request
         headers = {'User-Agent': 'Mozilla/5.0'}
         response = requests.get(url, headers=headers, timeout=30)
         
         if response.status_code == 200:
+            # The ECB CSV usually uses 'TIME_PERIOD' and 'OBS_VALUE'
             df = pd.read_csv(io.StringIO(response.text))
-            # The new API sometimes returns columns in lowercase or slightly different names
-            # We force them to what we need
-            df = df[['TIME_PERIOD', 'OBS_VALUE']].copy()
-            df.columns = ['Date', 'Rate']
-            df['Date'] = pd.to_datetime(df['Date'])
-            df['Rate'] = pd.to_numeric(df['Rate'], errors='coerce')
-            return df.set_index('Date').sort_index()
+            
+            # Defensive check: ensure columns exist
+            if 'TIME_PERIOD' in df.columns and 'OBS_VALUE' in df.columns:
+                df = df[['TIME_PERIOD', 'OBS_VALUE']].copy()
+                df.columns = ['Date', 'Rate']
+                df['Date'] = pd.to_datetime(df['Date'])
+                df['Rate'] = pd.to_numeric(df['Rate'], errors='coerce')
+                return df.set_index('Date').sort_index()
+            else:
+                print(f"Unexpected columns in response: {df.columns}")
         else:
-            print(f"ECB responded with status: {response.status_code}")
+            print(f"ECB Error {response.status_code} for {key}")
+            # Optional: print(response.text) to see the exact error message from ECB
     except Exception as e:
-        print(f"Error fetching {key}: {e}")
+        print(f"Exception for {key}: {e}")
     return pd.DataFrame()
 
 print("Generating Euribor Price Index...")
