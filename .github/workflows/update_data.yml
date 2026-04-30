@@ -22,19 +22,19 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install yfinance pandas
+        pip install yfinance pandas requests  # <--- Added requests here
 
     - name: Run download script
       run: python download_data.py
 
     - name: Run Euribor update 
-      run: Python Download_Euribor.py
+      run: python Download_Euribor.py        # <--- Changed to lowercase python
 
     - name: Commit and Push changes
       run: |
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
-        # Aggiungiamo tutta la cartella data, incluse le sottocartelle come ETF/
-        git add data/ETF/*.csv data/Tassi/*.csv
-        git commit -m "Aggiornamento dati storici ETF $(date)" || echo "Nessuna modifica da caricare"
+        # Using -A ensures that even new directories like data/Tassi are picked up
+        git add data/
+        git commit -m "Aggiornamento dati storici ETF e Euribor $(date)" || echo "Nessuna modifica da caricare"
         git push
