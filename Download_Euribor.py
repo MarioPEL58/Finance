@@ -1,82 +1,65 @@
-import requests
 import pandas as pd
+import requests
 import io
 import os
 
-# 1. Define the directory
+# 1. Setup Folders
 output_dir = 'data/Tassi'
+os.makedirs(output_dir, exist_ok=True)
 euribor_filename = f"{output_dir}/Euribor.csv"
 
-# 2. Ensure the directory exists
-os.makedirs(output_dir, exist_ok=True)
-
-# Configuration
-maturities = {
-    "1M": "FM.D.U2.EUR.RT.MM.EURIBOR1MD_.HSTA",
-    "3M": "FM.D.U2.EUR.RT.MM.EURIBOR3MD_.HSTA",
-    "6M": "FM.D.U2.EUR.RT.MM.EURIBOR6MD_.HSTA",
-    "12M": "FM.D.U2.EUR.RT.MM.EURIBOR1YD_.HSTA"
+# 2. ECB Configuration
+# Using the specific Dataflow ID (FM) and the Series Key
+series = {
+    "1M": "D.U2.EUR.RT.MM.EURIBOR1MD_.HSTA",
+    "3M": "D.U2.EUR.RT.MM.EURIBOR3MD_.HSTA",
+    "6M": "D.U2.EUR.RT.MM.EURIBOR6MD_.HSTA",
+    "12M": "D.U2.EUR.RT.MM.EURIBOR1YD_.HSTA",
 }
 
-def fetch_ecb_series(key):
-    # The new API requires the dataflow (FM) and the key separated correctly
-    # Structure: /data/seriesKey?parameters
-    url = f"https://data-api.ecb.europa.eu/service/data/ECB,FM,1.0/{key}?format=csvdata&startPeriod=2010-01-01"
+def fetch_euribor_data():
+    all_series = []
     
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        response = requests.get(url, headers=headers, timeout=30)
+    for tenor, key in series.items():
+        # The URL must follow this exact pattern: /service/data/FM/{key}
+        # We add ?format=csvdata to get the table format
+        url = f"https://data-api.ecb.europa.eu/service/data/FM/{key}?format=csvdata&startPeriod=2010-01-01"
         
-        if response.status_code == 200:
-            # The ECB CSV usually uses 'TIME_PERIOD' and 'OBS_VALUE'
+        try:
+            print(f"Processing {tenor}...")
+            response = requests.get(url, timeout=20)
+            response.raise_for_status()
+            
+            # Load the CSV data
             df = pd.read_csv(io.StringIO(response.text))
             
-            # Defensive check: ensure columns exist
-            if 'TIME_PERIOD' in df.columns and 'OBS_VALUE' in df.columns:
-                df = df[['TIME_PERIOD', 'OBS_VALUE']].copy()
-                df.columns = ['Date', 'Rate']
-                df['Date'] = pd.to_datetime(df['Date'])
-                df['Rate'] = pd.to_numeric(df['Rate'], errors='coerce')
-                return df.set_index('Date').sort_index()
-            else:
-                print(f"Unexpected columns in response: {df.columns}")
-        else:
-            print(f"ECB Error {response.status_code} for {key}")
-            # Optional: print(response.text) to see the exact error message from ECB
-    except Exception as e:
-        print(f"Exception for {key}: {e}")
-    return pd.DataFrame()
+            # Filter and rename columns
+            df = df[['TIME_PERIOD', 'OBS_VALUE']].copy()
+            df.columns = ['Date', 'Rate']
+            df['Date'] = pd.to_datetime(df['Date'])
+            df['Rate'] = pd.to_numeric(df['Rate'], errors='coerce')
+            
+            # Convert Annual Rate to Daily Growth Factor: 1 + (Rate / 100 / 360)
+            df[tenor] = 1 + (df['Rate'] / 100 / 360)
+            
+            all_series.append(df.set_index('Date')[[tenor]])
+            print(f"✓ Successfully fetched {tenor}")
+            
+        except Exception as e:
+            print(f"⚠ Error fetching {tenor}: {str(e)}")
+            continue
 
-print("Generating Euribor Price Index...")
+    if all_series:
+        # Merge all tenors, fill weekends, and calculate the Price Index (starting at 100)
+        df_combined = pd.concat(all_series, axis=1).sort_index().ffill()
+        df_prices = (df_combined.cumprod() * 100).round(5)
+        
+        # Save to CSV
+        df_prices.to_csv(euribor_filename)
+        print(f"✅ File saved successfully: {euribor_filename}")
+    else:
+        print("❌ No data collected. Check the log for errors.")
+        exit(1)
 
-all_series = []
-for label, key in maturities.items():
-    print(f"Processing {label}...")
-    df_rate = fetch_ecb_series(key)
-    if not df_rate.empty:
-        # Calculate daily factor: 1 + (Rate / 100 / 360)
-        # We use .to_frame() and a new name to avoid slice warnings
-        daily_factor = (1 + (df_rate['Rate'] / 100 / 360)).to_frame(name=label)
-        all_series.append(daily_factor)
-
-if all_series:
-    # Merge all maturities
-    df_combined = pd.concat(all_series, axis=1).sort_index()
-    
-    # Fill missing values (important for weekends/holidays)
-    df_combined = df_combined.ffill()
-    
-    # Calculate Cumulative Product (Price Index)
-    # If the rate was 0, factor is 1, price stays same.
-    # If rate is negative, factor < 1, price drops.
-    df_prices = df_combined.cumprod() * 100
-    
-    # Final cleanup
-    df_prices = df_prices.dropna().round(5)
-    
-    # Save to CSV
-    df_prices.to_csv(euribor_filename)
-    print(f"✅ Successfully created {euribor_filename}")
-else:
-    print("❌ No data collected. Script failed.")
-    exit(1)
+if __name__ == "__main__":
+    fetch_euribor_data()
