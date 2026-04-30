@@ -1,0 +1,36 @@
+name: Update Euribor Data
+
+on:
+  schedule:
+    - cron: '30 0 * * 2-6' # Runs 30 mins after midnight UTC
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install pandas requests
+
+    - name: Run Euribor update
+      run: python Download_Euribor.py
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+        git add data/Tassi/Euribor.csv
+        git commit -m "Aggiornamento Euribor: $(date +'%Y-%m-%d')" || echo "Nessuna modifica"
+        git push
