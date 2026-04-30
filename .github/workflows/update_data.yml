@@ -22,7 +22,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install yfinance pandas requests
+        pip install yfinance pandas
 
     - name: Run download script
       run: python download_data.py
