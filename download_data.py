@@ -1,21 +1,34 @@
 import yfinance as yf
-import pandas as pd
 import os
 
-# Lista dei ticker che vuoi monitorare
-tickers = ["AAPL", "TSLA", "BTC-USD"]
+# Lista dei ticker (usiamo solo i simboli di Yahoo Finance)
+tickers = [
+    "CSSPX.MI",
+    "XDAX.MI",
+    "CSMIB.MI",
+    "XESP.DE",
+    "SXRW.DE",
+    "XMEU.MI",
+    "SGAJ.DE",
+    "SW2CHB.MI"
+]
 
-# Crea la cartella 'data' se non esiste
 if not os.path.exists('data'):
     os.makedirs('data')
 
 for ticker in tickers:
-    print(f"Scaricamento dati per {ticker}...")
-    # Scarica gli ultimi 5 giorni di dati (ideale per aggiornamenti quotidiani)
-    data = yf.download(ticker, period="5d", interval="1d")
+    # Prende la parte prima del punto (es. CSSPX.MI -> CSSPX)
+    clean_name = ticker.split('.')[0]
+    print(f"Scaricamento Close per {clean_name}...")
+    
+    # auto_adjust=True per il prezzo rettificato
+    data = yf.download(ticker, period="60d", interval="1d", auto_adjust=True)
     
     if not data.empty:
-        filename = f"data/{ticker}_history.csv"
-        # Se il file esiste già, lo aggiorna, altrimenti lo crea
-        data.to_csv(filename)
+        # Selezioniamo solo la colonna 'Close'
+        close_data = data[['Close']]
+        
+        # Salviamo come CSSPX.csv
+        filename = f"data/{clean_name}.csv"
+        close_data.to_csv(filename)
         print(f"Salvato: {filename}")
