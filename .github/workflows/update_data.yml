@@ -1,0 +1,36 @@
+name: Update Ticker Data
+
+on:
+  schedule:
+    - cron: '0 0 * * *' # Esegue ogni giorno a mezzanotte
+  workflow_dispatch: # Permette l'avvio manuale dalla scheda Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Permesso necessario per caricare i file
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        pip install yfinance pandas
+
+    - name: Run download script
+      run: python download_data.py
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name "GitHub Action"
+        git config --global user.email "action@github.com"
+        git add data/*.csv
+        git commit -m "Aggiornamento dati ticker $(date)" || echo "Nessuna modifica da caricare"
+        git push
