@@ -3,8 +3,20 @@ import pandas as pd
 import io
 import os
 
-# Configuration
+import pandas as pd
+import requests
+import io
+import os
+
+# 1. Define the new directory
+output_dir = 'data/Tassi'
 euribor_filename = f"{output_dir}/Euribor.csv"
+
+# 2. Ensure the directory exists
+os.makedirs(output_dir, exist_ok=True)
+print(f"Directory {output_dir} is ready.")
+
+# Configuration
 maturities = {
     "1M": "FM.D.U2.EUR.RT.MM.EURIBOR1MD_.HSTA",
     "3M": "FM.D.U2.EUR.RT.MM.EURIBOR3MD_.HSTA",
