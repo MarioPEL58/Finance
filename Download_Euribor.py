@@ -29,7 +29,7 @@ print("Starting Euribor Update (Manual-Mirror Mode)...")
 
 for tenor, key in series.items():
     # Exactly the string that worked for you
-    url = f"https://data-api.ecb.europa.eu/service/data/FM/{key}?format=csvdata&startPeriod=1994-12-31"
+    url = f"https://data-api.ecb.europa.eu/service/data/FM/{key}?format=csvdata&startPeriod=1994-01-31"
     
     try:
         print(f"Fetching {tenor}...")
