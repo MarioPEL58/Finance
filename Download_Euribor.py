@@ -19,17 +19,24 @@ maturities = {
 }
 
 def fetch_ecb_series(key):
-    url = f"https://sdw-wsrest.ecb.europa.eu/service/data/FM/{key}?format=csvdata"
+    # Updated URL for the new ECB Data Gateway
+    url = f"https://data-api.ecb.europa.eu/service/data/FM/{key}?format=csvdata"
     try:
-        response = requests.get(url, timeout=15)
+        # Added a User-Agent so the ECB knows it's a legitimate request
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers, timeout=30)
+        
         if response.status_code == 200:
-            # Load and force numeric values for the Rate
             df = pd.read_csv(io.StringIO(response.text))
+            # The new API sometimes returns columns in lowercase or slightly different names
+            # We force them to what we need
             df = df[['TIME_PERIOD', 'OBS_VALUE']].copy()
             df.columns = ['Date', 'Rate']
             df['Date'] = pd.to_datetime(df['Date'])
             df['Rate'] = pd.to_numeric(df['Rate'], errors='coerce')
             return df.set_index('Date').sort_index()
+        else:
+            print(f"ECB responded with status: {response.status_code}")
     except Exception as e:
         print(f"Error fetching {key}: {e}")
     return pd.DataFrame()
