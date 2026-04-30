@@ -27,9 +27,6 @@ jobs:
     - name: Run download script
       run: python download_data.py
 
-    - name: Run Euribor update
-      run: python Download_Euribor.py
-
     - name: Commit and Push changes
       run: |
         git config --global user.name "GitHub Action"
