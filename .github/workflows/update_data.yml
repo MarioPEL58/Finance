@@ -2,7 +2,7 @@ name: Update Ticker Data
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Esegue ogni giorno a mezzanotte UTC
+    - cron: '0 0 * * 2-6' # Esegue ogni giorno a mezzanotte UTC
   workflow_dispatch: # Permette l'avvio manuale dalla scheda Actions
 
 jobs:
