@@ -3,11 +3,6 @@ import pandas as pd
 import io
 import os
 
-import pandas as pd
-import requests
-import io
-import os
-
 # 1. Define the new directory
 output_dir = 'data/Tassi'
 euribor_filename = f"{output_dir}/Euribor.csv"
