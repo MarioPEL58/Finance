@@ -1,42 +1,48 @@
 import yfinance as yf
 import pandas as pd
 import os
+from datetime import datetime, timedelta
 
-# Lista dei ticker (usiamo solo i simboli di Yahoo Finance)
-tickers = [
-    "CSSPX.MI", "XDAX.MI", "CSMIB.MI", "XESP.DE", 
-    "SXRW.DE", "XMEU.MI", "SGAJ.DE", "SW2CHB.MI"
-]
-
-# Crea la struttura data/ETF se non esiste
+tickers = ["CSSPX.MI", "XDAX.MI", "CSMIB.MI", "XESP.DE", "SXRW.DE", "XMEU.MI", "SGAJ.DE", "SW2CHB.MI"]
 output_dir = 'data/ETF'
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
 
 for ticker in tickers:
-    # Prende la parte prima del punto (es. CSSPX.MI -> CSSPX)
     clean_name = ticker.split('.')[0]
-    print(f"Scaricamento dati storici (10 anni) per {clean_name}...")
+    filename = f"{output_dir}/{clean_name}.csv"
     
-    # period="10y" scarica i dati degli ultimi 10 anni
-    # auto_adjust=True sposta il valore rettificato nella colonna 'Close'
-    data = yf.download(ticker, period="10y", interval="1d", auto_adjust=True)
-    
-    if not data.empty:
-        # Gestione del formato MultiIndex di yfinance per avere solo la colonna Close
-        if isinstance(data.columns, pd.MultiIndex):
-            # Se yfinance restituisce più livelli, prendiamo Close e il ticker specifico
-            close_data = data['Close'][ticker].to_frame()
-        else:
-            close_data = data[['Close']]
-        
-        # Rinominiamo la colonna in 'Price' e arrotondiamo a 5 decimali
-        close_data.columns = ['Price']
-        close_data['Price'] = close_data['Price'].round(5)
-        
-        # Salvataggio nel percorso specifico data/ETF/nome.csv
-        filename = f"{output_dir}/{clean_name}.csv"
-        close_data.to_csv(filename)
-        print(f"Salvato con successo: {filename}")
+    # 1. Check if file exists to determine start date
+    if os.path.exists(filename):
+        existing_df = pd.read_csv(filename, index_col=0, parse_dates=True)
+        # Start from the day after the last date in the file
+        last_date = existing_df.index[-1]
+        start_date = (last_date + timedelta(days=1)).strftime('%Y-%m-%d')
+        print(f"Updating {clean_name} starting from {start_date}...")
     else:
-        print(f"Errore: Nessun dato trovato per {ticker}")
+        existing_df = pd.DataFrame()
+        start_date = (datetime.now() - timedelta(days=365*10)).strftime('%Y-%m-%d')
+        print(f"File not found. Downloading full 10y history for {clean_name}...")
+
+    # 2. Download only the missing data
+    # We use end=today to ensure we get everything up to the latest close
+    new_data = yf.download(ticker, start=start_date, auto_adjust=True)
+
+    if not new_data.empty:
+        # Clean the new data (handle MultiIndex if necessary)
+        if isinstance(new_data.columns, pd.MultiIndex):
+            new_rows = new_data['Close'][ticker].to_frame()
+        else:
+            new_rows = new_data[['Close']]
+            
+        new_rows.columns = ['Price']
+        new_rows['Price'] = new_rows['Price'].round(5)
+
+        # 3. Combine and save
+        updated_df = pd.concat([existing_df, new_rows])
+        
+        # Drop duplicates just in case of overlapping dates
+        updated_df = updated_df[~updated_df.index.duplicated(keep='last')]
+        
+        updated_df.to_csv(filename)
+        print(f"✅ {clean_name} updated.")
+    else:
+        print(f"ℹ️ No new data found for {clean_name} (Market might be closed).")
