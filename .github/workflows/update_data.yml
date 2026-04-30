@@ -2,14 +2,14 @@ name: Update Ticker Data
 
 on:
   schedule:
-    - cron: '0 0 * * 2-6' # Esegue ogni giorno a mezzanotte UTC
-  workflow_dispatch: # Permette l'avvio manuale dalla scheda Actions
+    - cron: '0 0 * * 2-6'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Essenziale per permettere a GitHub di salvare i file CSV nel repo
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -22,19 +22,18 @@ jobs:
 
     - name: Install dependencies
       run: |
-        pip install yfinance pandas requests  # <--- Added requests here
+        pip install yfinance pandas requests
 
     - name: Run download script
       run: python download_data.py
 
-    - name: Run Euribor update 
-      run: python Download_Euribor.py        # <--- Changed to lowercase python
+    - name: Run Euribor update
+      run: python Download_Euribor.py
 
     - name: Commit and Push changes
       run: |
         git config --global user.name "GitHub Action"
         git config --global user.email "action@github.com"
-        # Using -A ensures that even new directories like data/Tassi are picked up
         git add data/
-        git commit -m "Aggiornamento dati storici ETF e Euribor $(date)" || echo "Nessuna modifica da caricare"
+        git commit -m "Aggiornamento dati: $(date +'%Y-%m-%d')" || echo "Nessuna modifica"
         git push
