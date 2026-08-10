@@ -1,0 +1,46 @@
+name: Aggiornamento Automatico Chiusura BTP
+
+on:
+  schedule:
+    # Esecuzione dal lunedì al venerdì alle 17:00 UTC (le 18:00 italiane)
+    - cron: '0 17 * * 1-5'
+  workflow_dispatch: # Abilita il pulsante per il lancio manuale da GitHub Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. Scarica i file del repository di scraping corrente
+    - name: Checkout repository corrente
+      uses: actions/checkout@v4
+
+    # 2. Configura l'ambiente Python sul server di GitHub
+    - name: Configura Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
+
+    # 3. Installa le librerie necessarie all'elaborazione dei dati
+    - name: Installa dipendenze
+      run: |
+        pip install pandas requests
+
+    # 4. Esegue lo script Python di estrazione e merge dei dati storici
+    - name: Esegui script di aggiornamento prezzi
+      run: python update_bonds_close.py
+
+    # 5. Sposta il CSV aggiornato dalla cartella 'output' al branch 'dev' di portfolio-streamlit
+    - name: Push del file aggiornato sulla repo Streamlit
+      uses: dmnemec/copy_file_to_another_repo_action@main
+      env:
+        API_TOKEN_GITHUB: ${{ secrets.PORTFOLIO_TOKEN }} # AGGIORNATO: Utilizza il tuo Secret esatto
+      with:
+        source-directory: 'output'
+        destination-github-username: 'MarioPEL58'
+        destination-repository-name: 'portfolio-streamlit'
+        target-branch: 'dev' # Destinazione sul branch dev del tuo applicativo
+        target-directory: 'data/bonds'
+        user-email: 'actions@github.com'
+        user-name: 'BTP-Data-Bot'
+        commit-message: 'Aggiornamento automatico chiusura IT0005494239.csv [skip ci]'
