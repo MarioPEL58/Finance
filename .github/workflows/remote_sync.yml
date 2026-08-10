@@ -30,17 +30,23 @@ jobs:
       - name: Esegui script di aggiornamento prezzi
         run: python update_bonds.py
 
+      # cehck 
+      - name: Controlla file prodotto
+        run: |
+          ls -la
+          ls -la output
+          find . -name "*.csv"
+          
       # 5. Copia il CSV aggiornato sulla repo Streamlit
       - name: Push del file aggiornato sulla repo Streamlit
         uses: dmnemec/copy_file_to_another_repo_action@main
         env:
           API_TOKEN_GITHUB: ${{ secrets.PORTFOLIO_TOKEN }}
         with:
-          source_directory: 'output'
-          destination_github_username: 'MarioPEL58'
-          destination_repository-name: 'portfolio-streamlit'
-          target_branch: 'dev'
-          target_directory: 'data/bonds'
+          source_file: 'output/IT0005494239.csv'
+          destination_repo: 'MarioPEL58/portfolio-streamlit'
+          destination_folder: 'data/bonds'
+          destination_branch: 'dev'
           user_email: 'actions@github.com'
           user_name: 'BTP-Data-Bot'
           commit_message: 'Aggiornamento automatico chiusura IT0005494239.csv [skip ci]'
