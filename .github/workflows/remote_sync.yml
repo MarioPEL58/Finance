@@ -75,4 +75,6 @@ jobs:
 
           git commit -m "Aggiornamento automatico BTP [skip ci]" || echo "Nessuna modifica da committare"
 
-         # git push origin dev
+          git status
+
+          # git push origin dev
