@@ -8,10 +8,12 @@ from datetime import datetime
 # CONFIGURAZIONE
 # ==========================================
 
-ISINS = [
-    "IT0005494239",
-    "IT0005696338"
-]
+with open("isins.txt", "r") as f:
+    ISINS = [
+        line.strip()
+        for line in f
+        if line.strip()
+    ]
 
 USER = "MarioPEL58"
 REPO = "portfolio-streamlit"
