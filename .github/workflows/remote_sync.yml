@@ -28,7 +28,7 @@ jobs:
 
     # 4. Esegue lo script Python di estrazione e merge dei dati storici
     - name: Esegui script di aggiornamento prezzi
-      run: python update_bonds_close.py
+      run: python update_bonds.py
 
     # 5. Sposta il CSV aggiornato dalla cartella 'output' al branch 'dev' di portfolio-streamlit
     - name: Push del file aggiornato sulla repo Streamlit
