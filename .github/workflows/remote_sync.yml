@@ -2,7 +2,6 @@ name: Aggiornamento Automatico Chiusura BTP
 
 on:
   schedule:
-    # Esecuzione dal lunedì al venerdì alle 17:00 UTC (18:00 italiane)
     - cron: '0 17 * * 1-5'
   workflow_dispatch:
 
@@ -11,42 +10,69 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Scarica i file del repository di scraping corrente
+
+      # 1. Checkout repository
       - name: Checkout repository corrente
         uses: actions/checkout@v4
 
-      # 2. Configura l'ambiente Python sul server di GitHub
+      # 2. Setup Python
       - name: Configura Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # 3. Installa le librerie necessarie all'elaborazione dei dati
+      # 3. Installa dipendenze
       - name: Installa dipendenze
         run: |
           pip install pandas requests
 
-      # 4. Esegue lo script Python di estrazione e merge dei dati storici
+      # 4. Esegue lo script
       - name: Esegui script di aggiornamento prezzi
         run: python update_bonds.py
 
-      # cehck 
-      - name: Controlla file prodotto
+      # 5. Verifica output
+      - name: Controlla file prodotti
         run: |
-          ls -la
+          echo "=== ISIN CONFIGURATI ==="
+          cat isins.txt
+
+          echo ""
+          echo "=== FILE GENERATI ==="
           ls -la output
-          find . -name "*.csv"
-          
-      # 5. Copia il CSV aggiornato sulla repo Streamlit
-      - name: Push del file aggiornato sulla repo Streamlit
-        uses: dmnemec/copy_file_to_another_repo_action@main
+
+      # 6. Clona la repo di destinazione
+      - name: Clona portfolio-streamlit
         env:
           API_TOKEN_GITHUB: ${{ secrets.PORTFOLIO_TOKEN }}
-        with:
-          source_file: 'output/IT0005494239.csv'
-          destination_repo: 'MarioPEL58/portfolio-streamlit'
-          destination_folder: 'data/bonds'
-          destination_branch: 'dev'
-          user_email: 'actions@github.com'
-          user_name: 'BTP-Data-Bot'
-          commit_message: 'Aggiornamento automatico chiusura IT0005494239.csv [skip ci]'
+        run: |
+          git clone https://x-access-token:${API_TOKEN_GITHUB}@github.com/MarioPEL58/portfolio-streamlit.git
+
+      # 7. Copia tutti i CSV presenti in isins.txt
+      - name: Aggiorna file CSV
+        run: |
+          while read isin
+          do
+            [ -z "$isin" ] && continue
+
+            echo "Copio output/${isin}.csv"
+
+            cp "output/${isin}.csv" \
+               "portfolio-streamlit/data/bonds/${isin}.csv"
+
+          done < isins.txt
+
+      # 8. Commit e push
+      - name: Commit e Push
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.PORTFOLIO_TOKEN }}
+        run: |
+          cd portfolio-streamlit
+
+          git config user.email "actions@github.com"
+          git config user.name "BTP-Data-Bot"
+
+          git add data/bonds/*.csv
+
+          git commit -m "Aggiornamento automatico BTP [skip ci]" || echo "Nessuna modifica da committare"
+
+         # git push origin dev
