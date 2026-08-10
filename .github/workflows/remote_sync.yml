@@ -2,45 +2,45 @@ name: Aggiornamento Automatico Chiusura BTP
 
 on:
   schedule:
-    # Esecuzione dal lunedì al venerdì alle 17:00 UTC (le 18:00 italiane)
+    # Esecuzione dal lunedì al venerdì alle 17:00 UTC (18:00 italiane)
     - cron: '0 17 * * 1-5'
-  workflow_dispatch: # Abilita il pulsante per il lancio manuale da GitHub Actions
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. Scarica i file del repository di scraping corrente
-    - name: Checkout repository corrente
-      uses: actions/checkout@v4
+      # 1. Scarica i file del repository di scraping corrente
+      - name: Checkout repository corrente
+        uses: actions/checkout@v4
 
-    # 2. Configura l'ambiente Python sul server di GitHub
-    - name: Configura Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
+      # 2. Configura l'ambiente Python sul server di GitHub
+      - name: Configura Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-    # 3. Installa le librerie necessarie all'elaborazione dei dati
-    - name: Installa dipendenze
-      run: |
-        pip install pandas requests
+      # 3. Installa le librerie necessarie all'elaborazione dei dati
+      - name: Installa dipendenze
+        run: |
+          pip install pandas requests
 
-    # 4. Esegue lo script Python di estrazione e merge dei dati storici
-    - name: Esegui script di aggiornamento prezzi
-      run: python update_bonds.py
+      # 4. Esegue lo script Python di estrazione e merge dei dati storici
+      - name: Esegui script di aggiornamento prezzi
+        run: python update_bonds.py
 
-    # 5. Sposta il CSV aggiornato dalla cartella 'output' al branch 'dev' di portfolio-streamlit
-    - name: Push del file aggiornato sulla repo Streamlit
-      uses: dmnemec/copy_file_to_another_repo_action@main
-      env:
-        API_TOKEN_GITHUB: ${{ secrets.PORTFOLIO_TOKEN }} # AGGIORNATO: Utilizza il tuo Secret esatto
-      with:
-        source_directory: 'output'
-        destination_github_username: 'MarioPEL58'
-        destination_repository-name: 'portfolio-streamlit'
-        target_branch: 'dev' # Destinazione sul branch dev del tuo applicativo
-        target_directory: 'data/bonds'
-        user_email: 'actions@github.com'
-        user_name: 'BTP-Data-Bot'
-        commit_message: 'Aggiornamento automatico chiusura IT0005494239.csv [skip ci]'
+      # 5. Copia il CSV aggiornato sulla repo Streamlit
+      - name: Push del file aggiornato sulla repo Streamlit
+        uses: dmnemec/copy_file_to_another_repo_action@main
+        env:
+          API_TOKEN_GITHUB: ${{ secrets.PORTFOLIO_TOKEN }}
+        with:
+          source_directory: 'output'
+          destination_github_username: 'MarioPEL58'
+          destination_repository-name: 'portfolio-streamlit'
+          target_branch: 'dev'
+          target_directory: 'data/bonds'
+          user_email: 'actions@github.com'
+          user_name: 'BTP-Data-Bot'
+          commit_message: 'Aggiornamento automatico chiusura IT0005494239.csv [skip ci]'
