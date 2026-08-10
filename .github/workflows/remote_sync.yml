@@ -36,11 +36,11 @@ jobs:
       env:
         API_TOKEN_GITHUB: ${{ secrets.PORTFOLIO_TOKEN }} # AGGIORNATO: Utilizza il tuo Secret esatto
       with:
-        source-directory: 'output'
-        destination-github-username: 'MarioPEL58'
-        destination-repository-name: 'portfolio-streamlit'
-        target-branch: 'dev' # Destinazione sul branch dev del tuo applicativo
-        target-directory: 'data/bonds'
-        user-email: 'actions@github.com'
-        user-name: 'BTP-Data-Bot'
-        commit-message: 'Aggiornamento automatico chiusura IT0005494239.csv [skip ci]'
+        source_directory: 'output'
+        destination_github_username: 'MarioPEL58'
+        destination_repository-name: 'portfolio-streamlit'
+        target_branch: 'dev' # Destinazione sul branch dev del tuo applicativo
+        target_directory: 'data/bonds'
+        user_email: 'actions@github.com'
+        user_name: 'BTP-Data-Bot'
+        commit_message: 'Aggiornamento automatico chiusura IT0005494239.csv [skip ci]'
