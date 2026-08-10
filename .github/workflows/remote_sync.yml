@@ -77,4 +77,4 @@ jobs:
 
           git status
 
-          # git push origin dev
+          git push origin dev
