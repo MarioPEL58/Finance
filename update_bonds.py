@@ -231,16 +231,21 @@ def process_isin(isin):
             ]
         )
 
+    is_minimal_format = (
+        set(df_old.columns) == {"Date", "Close"}
+    )
+    
     is_new_format = (
         "Date" in df_old.columns and
-        "Close" in df_old.columns
+        "Close" in df_old.columns and
+        not is_minimal_format
     )
 
     # controllo duplicati
 
     if not df_old.empty:
 
-        if is_new_format:
+        if is_new_format or is_minimal_format:
 
             current_date_new = pd.to_datetime(
                 CURRENT_DATE,
@@ -275,7 +280,7 @@ def process_isin(isin):
 
         try:
 
-            if is_new_format:
+            if is_new_format or is_minimal_format:
 
                 last_price = float(df_old["Close"].iloc[0])
 
@@ -304,13 +309,27 @@ def process_isin(isin):
 
     # nuova riga
 
-    if is_new_format:
-
+    if is_minimal_format:
+    
         current_date_new = pd.to_datetime(
             CURRENT_DATE,
             format="%d.%m.%Y"
         ).strftime("%d/%m/%Y")
-
+    
+        new_row = pd.DataFrame([
+            {
+                "Date": current_date_new,
+                "Close": close_price
+            }
+        ])
+    
+    elif is_new_format:
+    
+        current_date_new = pd.to_datetime(
+            CURRENT_DATE,
+            format="%d.%m.%Y"
+        ).strftime("%d/%m/%Y")
+    
         new_row = pd.DataFrame([
             {
                 "Date": current_date_new,
@@ -365,7 +384,7 @@ def process_isin(isin):
     print("\nFILE GENERATO:")
     print(file_path)
 
-    if is_new_format:
+    if is_new_format or is_minimal_format:
 
         print(
             f"{current_date_new} | "
