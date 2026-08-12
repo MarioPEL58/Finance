@@ -70,9 +70,12 @@ def get_borsa_url(isin):
     for url in urls:
 
         try:
-            r = requests.get(url, timeout=10)
 
-            if r.status_code == 200 and "Pagina non trovata" not in r.text:
+            prezzo = get_closing_price_borsa(url)
+
+            if prezzo is not None:
+
+                print(f"URL valido trovato: {url}")
                 return url
 
         except Exception:
@@ -230,10 +233,11 @@ def process_isin(isin):
     
     print(f"Prezzo estratto: {close_price}")
     
-    if not close_price:
-        print("Prezzo non disponibile. Utilizzo fallback.")
-        close_price = 94.780
-
+    if close_price is None:
+    
+        print(f"Prezzo non disponibile per {isin}. File non aggiornato.")
+        return
+    
     print(f"Prezzo individuato: {close_price}")
 
     try:
