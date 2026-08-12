@@ -64,6 +64,126 @@ def get_closing_price_borsa(url):
 # AGGIORNAMENTO SINGOLO ISIN
 # ==========================================
 
+# def process_isin(isin):
+
+#     file_path = os.path.join(OUTPUT_DIR, f"{isin}.csv")
+
+#     raw_csv_url = (
+#         f"https://raw.githubusercontent.com/"
+#         f"{USER}/{REPO}/{BRANCH}/data/bonds/{isin}.csv"
+#     )
+
+#     url_borsa = (
+#         f"https://www.borsaitaliana.it/borsa/obbligazioni/"
+#         f"mot/btp/scheda/{isin}-MOTX.html?lang=it"
+#     )
+
+#     print(f"\n===== ELABORAZIONE {isin} =====")
+
+#     close_price = get_closing_price_borsa(url_borsa)
+
+#     if not close_price:
+#         print("Prezzo non disponibile. Utilizzo fallback.")
+#         close_price = 94.780
+
+#     print(f"Prezzo individuato: {close_price}")
+
+#     try:
+#         print(f"Lettura storico da: {raw_csv_url}")
+
+#         df_old = pd.read_csv(raw_csv_url)
+
+#         print("Storico letto correttamente.")
+
+#     except Exception as e:
+
+#         print(f"Storico non disponibile ({e})")
+
+#         df_old = pd.DataFrame(
+#             columns=[
+#                 "Data",
+#                 "Ultimo",
+#                 "Apertura",
+#                 "Massimo",
+#                 "Minimo",
+#                 "Var. %"
+#             ]
+#         )
+
+#     if (
+#         not df_old.empty and
+#         CURRENT_DATE in df_old["Data"].astype(str).values
+#     ):
+
+#         print(f"Dati del {CURRENT_DATE} già presenti.")
+
+#         os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+#         df_old.to_csv(file_path, index=False)
+
+#         return
+
+#     var_percent = "0,00%"
+
+#     if not df_old.empty:
+
+#         try:
+
+#             last_price = float(
+#                 str(df_old["Ultimo"].iloc[0]).replace(",", ".")
+#             )
+
+#             diff = (
+#                 (close_price - last_price)
+#                 / last_price
+#             ) * 100
+
+#             var_percent = (
+#                 f"{diff:+.2f}%"
+#                 .replace(".", ",")
+#             )
+
+#         except Exception as calc_error:
+
+#             print(
+#                 f"Errore calcolo variazione: {calc_error}"
+#             )
+
+#     close_price_str = (
+#         f"{close_price:.3f}"
+#         .replace(".", ",")
+#     )
+
+#     new_row = pd.DataFrame([
+#         {
+#             "Data": CURRENT_DATE,
+#             "Ultimo": close_price_str,
+#             "Apertura": close_price_str,
+#             "Massimo": close_price_str,
+#             "Minimo": close_price_str,
+#             "Var. %": var_percent
+#         }
+#     ])
+
+#     df_combined = pd.concat(
+#         [new_row, df_old],
+#         ignore_index=True
+#     )
+
+#     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+#     df_combined.to_csv(
+#         file_path,
+#         index=False
+#     )
+
+#     print("\nFILE GENERATO:")
+#     print(file_path)
+#     print(
+#         f"{CURRENT_DATE} | "
+#         f"{close_price_str} | "
+#         f"{var_percent}"
+#     )
 def process_isin(isin):
 
     file_path = os.path.join(OUTPUT_DIR, f"{isin}.csv")
@@ -89,6 +209,7 @@ def process_isin(isin):
     print(f"Prezzo individuato: {close_price}")
 
     try:
+
         print(f"Lettura storico da: {raw_csv_url}")
 
         df_old = pd.read_csv(raw_csv_url)
@@ -110,18 +231,43 @@ def process_isin(isin):
             ]
         )
 
-    if (
-        not df_old.empty and
-        CURRENT_DATE in df_old["Data"].astype(str).values
-    ):
+    is_new_format = (
+        "Date" in df_old.columns and
+        "Close" in df_old.columns
+    )
 
-        print(f"Dati del {CURRENT_DATE} già presenti.")
+    # controllo duplicati
 
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
+    if not df_old.empty:
 
-        df_old.to_csv(file_path, index=False)
+        if is_new_format:
 
-        return
+            current_date_new = pd.to_datetime(
+                CURRENT_DATE,
+                format="%d.%m.%Y"
+            ).strftime("%d/%m/%Y")
+
+            if current_date_new in df_old["Date"].astype(str).values:
+
+                print(f"Dati del {CURRENT_DATE} già presenti.")
+
+                os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+                df_old.to_csv(file_path, index=False)
+
+                return
+
+        else:
+
+            if CURRENT_DATE in df_old["Data"].astype(str).values:
+
+                print(f"Dati del {CURRENT_DATE} già presenti.")
+
+                os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+                df_old.to_csv(file_path, index=False)
+
+                return
 
     var_percent = "0,00%"
 
@@ -129,9 +275,16 @@ def process_isin(isin):
 
         try:
 
-            last_price = float(
-                str(df_old["Ultimo"].iloc[0]).replace(",", ".")
-            )
+            if is_new_format:
+
+                last_price = float(df_old["Close"].iloc[0])
+
+            else:
+
+                last_price = float(
+                    str(df_old["Ultimo"].iloc[0])
+                    .replace(",", ".")
+                )
 
             diff = (
                 (close_price - last_price)
@@ -149,28 +302,60 @@ def process_isin(isin):
                 f"Errore calcolo variazione: {calc_error}"
             )
 
-    close_price_str = (
-        f"{close_price:.3f}"
-        .replace(".", ",")
-    )
+    # nuova riga
 
-    new_row = pd.DataFrame([
-        {
-            "Data": CURRENT_DATE,
-            "Ultimo": close_price_str,
-            "Apertura": close_price_str,
-            "Massimo": close_price_str,
-            "Minimo": close_price_str,
-            "Var. %": var_percent
-        }
-    ])
+    if is_new_format:
+
+        current_date_new = pd.to_datetime(
+            CURRENT_DATE,
+            format="%d.%m.%Y"
+        ).strftime("%d/%m/%Y")
+
+        new_row = pd.DataFrame([
+            {
+                "Date": current_date_new,
+                "Open": close_price,
+                "High": close_price,
+                "Low": close_price,
+                "Last": close_price,
+                "Close": close_price,
+                "Number of Shares": 0,
+                "Number of Trades": 0,
+                "Turnover": 0
+            }
+        ])
+
+    else:
+
+        close_price_str = (
+            f"{close_price:.3f}"
+            .replace(".", ",")
+        )
+
+        new_row = pd.DataFrame([
+            {
+                "Data": CURRENT_DATE,
+                "Ultimo": close_price_str,
+                "Apertura": close_price_str,
+                "Massimo": close_price_str,
+                "Minimo": close_price_str,
+                "Var. %": var_percent
+            }
+        ])
+
+    # merge
 
     df_combined = pd.concat(
         [new_row, df_old],
         ignore_index=True
     )
 
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    # salvataggio
+
+    os.makedirs(
+        OUTPUT_DIR,
+        exist_ok=True
+    )
 
     df_combined.to_csv(
         file_path,
@@ -179,11 +364,22 @@ def process_isin(isin):
 
     print("\nFILE GENERATO:")
     print(file_path)
-    print(
-        f"{CURRENT_DATE} | "
-        f"{close_price_str} | "
-        f"{var_percent}"
-    )
+
+    if is_new_format:
+
+        print(
+            f"{current_date_new} | "
+            f"{close_price:.3f}"
+        )
+
+    else:
+
+        print(
+            f"{CURRENT_DATE} | "
+            f"{close_price_str} | "
+            f"{var_percent}"
+        )
+
 
 # ==========================================
 # MAIN
