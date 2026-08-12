@@ -224,8 +224,12 @@ def process_isin(isin):
         print(f"Nessuna scheda trovata per {isin}")
         return
     
+    print(f"URL utilizzato: {url_borsa}")
+    
     close_price = get_closing_price_borsa(url_borsa)
-
+    
+    print(f"Prezzo estratto: {close_price}")
+    
     if not close_price:
         print("Prezzo non disponibile. Utilizzo fallback.")
         close_price = 94.780
