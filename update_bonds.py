@@ -59,7 +59,26 @@ def get_closing_price_borsa(url):
     except Exception as e:
         print(f"Errore durante l'estrazione da Borsa Italiana: {e}")
         return None
+        
+def get_borsa_url(isin):
 
+    urls = [
+        f"https://www.borsaitaliana.it/borsa/obbligazioni/mot/btp/scheda/{isin}-MOTX.html?lang=it",
+        f"https://www.borsaitaliana.it/borsa/cw-e-certificates/scheda/{isin}-SEDX.html?lang=it"
+    ]
+
+    for url in urls:
+
+        try:
+            r = requests.get(url, timeout=10)
+
+            if r.status_code == 200 and "Pagina non trovata" not in r.text:
+                return url
+
+        except Exception:
+            pass
+
+    return None
 # ==========================================
 # AGGIORNAMENTO SINGOLO ISIN
 # ==========================================
@@ -193,13 +212,18 @@ def process_isin(isin):
         f"{USER}/{REPO}/{BRANCH}/data/bonds/{isin}.csv"
     )
 
-    url_borsa = (
-        f"https://www.borsaitaliana.it/borsa/obbligazioni/"
-        f"mot/btp/scheda/{isin}-MOTX.html?lang=it"
-    )
+    # url_borsa = (
+    #     f"https://www.borsaitaliana.it/borsa/obbligazioni/"
+    #     f"mot/btp/scheda/{isin}-MOTX.html?lang=it"
+    # )
 
     print(f"\n===== ELABORAZIONE {isin} =====")
-
+    url_borsa = get_borsa_url(isin)
+    
+    if not url_borsa:
+        print(f"Nessuna scheda trovata per {isin}")
+        return
+    
     close_price = get_closing_price_borsa(url_borsa)
 
     if not close_price:
