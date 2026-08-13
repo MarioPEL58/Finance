@@ -53,12 +53,20 @@ jobs:
           while read isin
           do
             [ -z "$isin" ] && continue
-
-            echo "Copio output/${isin}.csv"
-
-            cp "output/${isin}.csv" \
-               "portfolio-streamlit/data/bonds/${isin}.csv"
-
+      
+            if [ -f "output/${isin}.csv" ]; then
+      
+              echo "Copio output/${isin}.csv"
+      
+              cp "output/${isin}.csv" \
+                 "portfolio-streamlit/data/bonds/${isin}.csv"
+      
+            else
+      
+              echo "ATTENZIONE: output/${isin}.csv non trovato"
+      
+            fi
+      
           done < isins.txt
 
       # 8. Commit e push
