@@ -51,8 +51,21 @@ def get_closing_price_borsa(url):
                 )
 
             if match:
-                price_str = match.group(1).replace(",", ".").strip()
-                return round(float(price_str), 3)
+            
+                price_str = match.group(1).strip()
+            
+                # Formato italiano:
+                # 1.023,15 -> 1023.15
+            
+                price_str = (
+                    price_str
+                    .replace(".", "")
+                    .replace(",", ".")
+                )
+            
+                price_value = float(price_str)
+            
+                return round(price_value, 3)
 
         return None
 
