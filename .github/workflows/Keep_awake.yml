@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Ping Streamlit URL with Headers
         run: |
-          curl -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+          curl -s -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
           -H "Accept: text/html" \
           "https://portfolio-app-7onxevmw2oxqpjxldpbqxg.streamlit.app/" > /dev/null
           echo "Ping inviato con successo alle ore $(date)"
