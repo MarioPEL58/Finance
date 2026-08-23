@@ -1,0 +1,18 @@
+name: Keep Streamlit App Awake
+
+on:
+  schedule:
+    # Esegue lo script ogni 4 ore per evitare lo sleep di Streamlit
+    - cron: '0 */4 * * *'
+  workflow_dispatch: # Permette l'avvio manuale dalla scheda Actions
+
+jobs:
+  wake-up:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Streamlit URL with Headers
+        run: |
+          curl -sL -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64)" \
+          -H "Accept: text/html" \
+          "https://portfolio-app-7onxevmw2oxqpjxldpbqxg.streamlit.app/" > /dev/null
+          echo "Ping inviato con successo alle ore $(date)"
