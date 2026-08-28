@@ -2,7 +2,7 @@ name: Aggiornamento Automatico Chiusura BTP
 
 on:
   schedule:
-    - cron: '0 17 * * 1-5'
+    - cron: '53 16 * * 1-5'
   workflow_dispatch:
 
 jobs:
