@@ -86,4 +86,29 @@ jobs:
           git status
 
           git push origin dev
-          git push origin HEAD:main
+          
+      # 9. Aggiorna anche MAIN    
+      - name: Aggiorna anche MAIN
+        run: |
+          cd portfolio-streamlit
+
+          git fetch origin main
+          git checkout main
+          git pull origin main
+
+          while read isin
+          do
+            [ -z "$isin" ] && continue
+
+            if [ -f "../output/${isin}.csv" ]; then
+              cp "../output/${isin}.csv" \
+                 "data/bonds/${isin}.csv"
+            fi
+
+          done < ../isins.txt
+
+          git add data/bonds/*.csv
+
+          git commit -m "Aggiornamento automatico BTP [skip ci]" || echo "Nessuna modifica da committare"
+
+          git push origin main
